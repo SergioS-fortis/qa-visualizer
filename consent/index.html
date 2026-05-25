@@ -436,6 +436,7 @@
 <!-- TAB NAV -->
 <div class="tab-nav">
   <button class="tab-btn active" onclick="showTab('overview')">Overview</button>
+  <button class="tab-btn" onclick="showTab('iab')">IAB TCF Banner</button>
   <button class="tab-btn" onclick="showTab('regions')">Region Flows</button>
   <button class="tab-btn" onclick="showTab('categories')">OneTrust Categories</button>
   <button class="tab-btn" onclick="showTab('demeter')">Demeter</button>
@@ -544,6 +545,120 @@
       <div class="value">Present in EU/UK responses. The IAB TCF Transparency &amp; Consent Framework string. Stored in <code>OT_ConsentString</code> cache and passed on subsequent OneTrust API calls.</div>
     </div>
   </div>
+
+</div>
+
+<!-- ===== IAB TCF TAB ===== -->
+<div id="tab-iab" class="tab-panel">
+
+  <div class="callout blue">
+    <span class="callout-icon">📜</span>
+    <div class="callout-body">
+      <strong>IAB TCF (Transparency &amp; Consent Framework)</strong> is a standardized system for collecting and communicating user consent to ad tech vendors. It is required by GDPR in EU and UK. OneTrust generates an encoded <strong>TC String</strong> that encodes the player's consent for each registered vendor and purpose, then passes it to downstream ad SDKs.
+      <br><br>
+      <strong>Do not confuse IAB TCF with AdMon.</strong> AdMon is Spire's rewarded video system (AppLovin MAX). IAB TCF is the consent banner framework. They are separate systems. The IAB TCF banner appears <em>before</em> any ad is served; AdMon is the runtime ad delivery system.
+    </div>
+  </div>
+
+  <div class="section-label">What triggers the IAB TCF banner</div>
+  <div class="info-grid">
+    <div class="info-card">
+      <div class="label">Trigger</div>
+      <div class="value">Player's country code is in an EU/UK (GDPR) region. Terra API returns legal basis <code>expressConsent</code> for the <code>tracking</code> action → SDK selects <strong>Explicit Consent</strong> flow → <code>ShouldShowBanner = true</code>.</div>
+    </div>
+    <div class="info-card">
+      <div class="label">Affected regions</div>
+      <div class="value">All EU member states + United Kingdom, Norway, Iceland, Liechtenstein, Switzerland. Determined server-side by OneTrust + Terra API.</div>
+    </div>
+    <div class="info-card">
+      <div class="label">Games affected</div>
+      <div class="value"><span class="pill blue">Demeter</span> <span class="pill red">Spire</span> <span class="pill green">Atlas</span> — all released in EU/UK. Mergemon is not released there yet.</div>
+    </div>
+    <div class="info-card">
+      <div class="label">TC String caching</div>
+      <div class="value">The <code>IABTCF_TCString</code> is cached under <code>OT_ConsentString</code>. On return visits, the cached string is passed to OneTrust's API so the banner may not show again if consent is still valid.</div>
+    </div>
+  </div>
+
+  <div class="section-label">What the IAB TCF banner shows</div>
+  <div class="flow-card" style="margin-bottom:24px;max-width:700px">
+    <ul>
+      <li><strong>Summary screen:</strong> brief description of data uses with Accept All / Reject All / Manage Preferences buttons</li>
+      <li><strong>Preference Center:</strong> toggles for each OneTrust category (C0001–C0004) and for IAB purposes individually</li>
+      <li><strong>Vendor List:</strong> full list of IAB-registered ad tech vendors (Google, AppLovin MAX, Meta, analytics partners) with their declared purposes and legal bases</li>
+      <li><strong>IAB Purposes:</strong> Store/access information (P1), personalised ads (P4), content measurement (P8), etc.</li>
+      <li><strong>Special Features:</strong> Precise geolocation (SF1), active scanning of device characteristics (SF2)</li>
+    </ul>
+    <div class="note">The vendor list is hosted by OneTrust and automatically kept in sync with the IAB Global Vendor List. Vendors are configured per OneTrust domain in the OneTrust dashboard.</div>
+  </div>
+
+  <div class="section-label">Spire — native OneTrust SDK (IAB TCF)</div>
+  <div class="callout yellow">
+    <span class="callout-icon">⚠️</span>
+    <div class="callout-body">
+      <strong>Spire uses <code>UseNativeOneTrustBanner: 1</code></strong> — the native OneTrust mobile SDK is rendered by the OS, not inside a Unity WebView. This means the IAB TCF vendor list and preference center are displayed using the platform's native UI components (UIKit on iOS, Android views on Android), not the custom HTML/CSS banner used by Demeter and Atlas.
+      <br><br>
+      From a QA perspective: the native SDK looks and behaves differently from the Unity WebView banner. Swipe/scroll interactions, font rendering, and button positioning differ from the custom Unity UI.
+    </div>
+  </div>
+  <div class="prop-list" style="margin-bottom:24px">
+    <div class="prop-row">
+      <div class="prop-key">OneTrust domain (iOS)</div>
+      <div class="prop-val"><code>019831da-6374-7fcf-884f-c2f9a4d2cbca</code></div>
+    </div>
+    <div class="prop-row">
+      <div class="prop-key">OneTrust domain (Android)</div>
+      <div class="prop-val"><code>019831d9-e624-757a-9c0b-03639cce53ac</code></div>
+    </div>
+    <div class="prop-row">
+      <div class="prop-key">SDK version</div>
+      <div class="prop-val"><code>202506.1.0</code></div>
+    </div>
+    <div class="prop-row">
+      <div class="prop-key">TC String storage</div>
+      <div class="prop-val">Stored in <code>StorageKeys.IABTCF_TCString</code>, passed back to OneTrust API on subsequent calls via <code>OneTrustConfig.iabTcfTcString</code>. Also stored in <code>OT_ConsentString</code> cache key.</div>
+    </div>
+    <div class="prop-row">
+      <div class="prop-key">What the TC String gates</div>
+      <div class="prop-val">Firebase Analytics enable/disable is gated on OneTrust TARGETING category (C0004) + age gate <code>trackers</code> permission. The TC String itself is passed to downstream ad SDKs that consume it directly for vendor-level consent signalling.</div>
+    </div>
+  </div>
+
+  <div class="section-label">Demeter &amp; Atlas — Unity WebView IAB TCF</div>
+  <div class="callout blue">
+    <span class="callout-icon">ℹ️</span>
+    <div class="callout-body">
+      Demeter and Atlas use the <strong>custom Unity WebView OneTrust banner</strong> (HTML/CSS rendered in a Unity WebView overlay). The IAB TCF vendor list is accessible via the Preference Center button within the same WebView UI. The TC String is generated and cached identically to Spire — only the rendering differs.
+      <br><br>
+      <strong>Demeter privacy URL override:</strong> The banner's privacy policy link is rewritten at runtime from <code>fortisgames.com</code> to <code>validgames.com/policy.html</code> by <code>DemeterComplianceApiDecorator.FetchBannerData()</code>.
+    </div>
+  </div>
+
+  <div class="section-label">IAB TCF vs AdMon — key distinction</div>
+  <table class="cat-table">
+    <thead>
+      <tr>
+        <th>System</th>
+        <th>What it is</th>
+        <th>When it runs</th>
+        <th>Gating mechanism</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>IAB TCF banner</strong></td>
+        <td>GDPR consent framework — records player consent for ad/analytics vendors via OneTrust</td>
+        <td>Bootflow — before game loads, after Age Gate</td>
+        <td>Terra API returns <code>expressConsent</code> → <code>ShouldShowBanner = true</code></td>
+      </tr>
+      <tr>
+        <td><strong>AdMon (Spire)</strong></td>
+        <td>Rewarded video ad delivery system — AppLovin MAX S2S reward callback pipeline</td>
+        <td>Runtime — in LoadingScreen after stats load</td>
+        <td>GrowthBook kill switch (<code>IKillSwitch.Feature.adMon</code>), not OneTrust</td>
+      </tr>
+    </tbody>
+  </table>
 
 </div>
 
@@ -908,6 +1023,10 @@
           <div class="prop-val"><code>TailoredOffersConsentResolver</code> sets the initial preference on first login based on Terra API regional config (<code>IComplianceInitialConsentProvider.ShouldEnableTailoredOffers()</code>). EU = opt-out default. US = opt-in default.</div>
         </div>
         <div class="prop-row">
+          <div class="prop-key">US age gate rule</div>
+          <div class="prop-val"><strong>No age gate shown for US players.</strong> The Terra API returns <code>noAgeGate</code> for Spire's gameId + US country code. The <code>UseCombinedAgeGate: 1</code> flag only affects how the age gate renders <em>when required</em> — it does not force one to appear.</div>
+        </div>
+        <div class="prop-row">
           <div class="prop-key">QA geo override</div>
           <div class="prop-val"><code>DebugGeoOverride</code> in Spire config — allows overriding the detected region in debug/dev builds without a VPN. Set to the desired country code to test region-specific flows.</div>
         </div>
@@ -946,13 +1065,15 @@
     <div class="flow-card">
       <h3><span class="flow-badge badge-usa">USA</span></h3>
       <ul>
-        <li>Combined Age Gate + ToS/Privacy</li>
+        <li><strong>No age gate</strong> — age slider is skipped (Terra API returns <code>noAgeGate</code> for Spire + US)</li>
+        <li>ToS/Privacy acceptance only</li>
         <li>OneTrust CCPA banner</li>
         <li>DNSM link (California)</li>
         <li>Firebase: active by default, opt-out</li>
         <li>Tailored offers: opt-in default</li>
         <li>ATT prompt (iOS)</li>
       </ul>
+      <div class="note">Age gate rule is server-configured per game via Terra API — not in the local asset. Spire has NoAgeGate for US, same as Atlas.</div>
     </div>
     <div class="flow-card">
       <h3><span class="flow-badge badge-default">Rest of World</span></h3>
@@ -1194,8 +1315,8 @@
       <tr>
         <td class="row-label">US age gate rule</td>
         <td>Required (slider shown)</td>
-        <td>Required (slider shown)</td>
-        <td><strong>NoAgeGate</strong> (skipped)</td>
+        <td><strong>No Age Gate</strong> (skipped — Terra API config)</td>
+        <td><strong>No Age Gate</strong> (skipped — local asset config)</td>
         <td>Required (slider shown)</td>
       </tr>
       <tr>
