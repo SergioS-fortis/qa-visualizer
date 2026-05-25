@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QA Visualizer — Fortis Games</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --accent: #58a6ff;
+      --accent2: #3fb950;
+      --accent3: #f78166;
+      --accent4: #d2a8ff;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --card-hover: #1f2937;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* NAV */
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 32px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      position: sticky; top: 0; z-index: 100;
+    }
+    nav .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--text);
+      text-decoration: none;
+    }
+    nav .logo-icon {
+      width: 28px; height: 28px;
+      background: linear-gradient(135deg, #58a6ff, #3fb950);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+    }
+    nav .badge {
+      background: rgba(88,166,255,0.15);
+      color: var(--accent);
+      border: 1px solid rgba(88,166,255,0.3);
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      letter-spacing: 0.04em;
+    }
+
+    /* HERO */
+    .hero {
+      text-align: center;
+      padding: 80px 32px 48px;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .hero .tag {
+      display: inline-block;
+      background: rgba(63,185,80,0.1);
+      color: var(--accent2);
+      border: 1px solid rgba(63,185,80,0.25);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 4px 14px;
+      margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-size: clamp(32px, 5vw, 48px);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #e6edf3 0%, #8b949e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.6;
+    }
+
+    /* GRID */
+    .section { padding: 0 32px 80px; max-width: 1100px; margin: 0 auto; }
+    .section-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      text-decoration: none;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: border-color 0.15s, transform 0.15s, background 0.15s;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent 60%, rgba(88,166,255,0.04));
+      pointer-events: none;
+    }
+    .card:hover {
+      border-color: var(--accent);
+      background: var(--card-hover);
+      transform: translateY(-2px);
+    }
+    .card-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .card-header { display: flex; align-items: center; gap: 12px; }
+    .card-title { font-weight: 700; font-size: 16px; }
+    .card-desc { color: var(--muted); font-size: 14px; line-height: 1.55; }
+    .card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    .tag-pill {
+      background: rgba(139,148,158,0.1);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 11px;
+      color: var(--muted);
+      padding: 2px 8px;
+    }
+    .card-arrow {
+      position: absolute;
+      top: 20px; right: 20px;
+      color: var(--muted);
+      font-size: 18px;
+      transition: color 0.15s, transform 0.15s;
+    }
+    .card:hover .card-arrow { color: var(--accent); transform: translate(2px, -2px); }
+
+    /* COMING SOON CARD */
+    .card.coming-soon {
+      opacity: 0.5;
+      cursor: default;
+      pointer-events: none;
+    }
+    .card.coming-soon .card-arrow { display: none; }
+    .cs-badge {
+      display: inline-block;
+      background: rgba(139,148,158,0.1);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 2px 8px;
+      margin-top: auto;
+      align-self: flex-start;
+    }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      padding: 24px 32px;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="logo">
+    <span class="logo-icon">🔬</span>
+    QA Visualizer
+  </a>
+  <span class="badge">Fortis Games Internal</span>
+</nav>
+
+<div class="hero">
+  <div class="tag">Quality Assurance</div>
+  <h1>QA Document Visualizer</h1>
+  <p>Interactive reference docs for Fortis Games QA — bootflows, compliance sequences, platform SDK behavior, and more.</p>
+</div>
+
+<div class="section">
+  <div class="section-label">Live Documents</div>
+  <div class="grid">
+
+    <a class="card" href="bootflow/index.html">
+      <span class="card-arrow">↗</span>
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(88,166,255,0.1)">🔐</div>
+        <div class="card-title">Bootflow &amp; Compliance Modals</div>
+      </div>
+      <div class="card-desc">
+        Visual comparison of the Platform SDK bootflow and UI modal sequences across Demeter, Spire, Atlas, and Mergemon. Includes compliance flows by region.
+      </div>
+      <div class="card-tags">
+        <span class="tag-pill">Demeter</span>
+        <span class="tag-pill">Spire</span>
+        <span class="tag-pill">Atlas</span>
+        <span class="tag-pill">Mergemon</span>
+        <span class="tag-pill">Platform SDK</span>
+      </div>
+    </a>
+
+  </div>
+
+  <br /><br />
+  <div class="section-label">Coming Soon</div>
+  <div class="grid">
+
+    <div class="card coming-soon">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(139,148,158,0.1)">🛒</div>
+        <div class="card-title">Store &amp; IAP Flow</div>
+      </div>
+      <div class="card-desc">Purchase flow comparison across games — StoreKit, Grace, IAP validation, and receipt handling.</div>
+      <span class="cs-badge">Coming Soon</span>
+    </div>
+
+    <div class="card coming-soon">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(139,148,158,0.1)">📊</div>
+        <div class="card-title">Analytics Event Reference</div>
+      </div>
+      <div class="card-desc">Cross-game analytics event catalogue — Singular, CleverTap, Firebase attribution events.</div>
+      <span class="cs-badge">Coming Soon</span>
+    </div>
+
+    <div class="card coming-soon">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(139,148,158,0.1)">🗺️</div>
+        <div class="card-title">Save System Architecture</div>
+      </div>
+      <div class="card-desc">Save/load system patterns, offline vs. DGS modes, and server sync flows.</div>
+      <span class="cs-badge">Coming Soon</span>
+    </div>
+
+    <div class="card coming-soon">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(139,148,158,0.1)">🧪</div>
+        <div class="card-title">Test Coverage Map</div>
+      </div>
+      <div class="card-desc">Which systems have automated coverage and which are manually tested — per game and per platform.</div>
+      <span class="cs-badge">Coming Soon</span>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  Built by QA · <a href="https://github.com/SergioS-fortis/qa-visualizer" target="_blank">View on GitHub</a>
+</footer>
+
+</body>
+</html>
