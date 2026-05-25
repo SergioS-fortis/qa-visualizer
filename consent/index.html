@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Consent & Region Flows — QA Visualizer</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #1c2128;
+      --border: #30363d;
+      --accent: #58a6ff;
+      --accent2: #3fb950;
+      --accent3: #f78166;
+      --accent4: #d2a8ff;
+      --accent5: #ffa657;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --card-hover: #1f2937;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* NAV */
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 32px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      position: sticky; top: 0; z-index: 100;
+    }
+    nav .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--text);
+      text-decoration: none;
+    }
+    nav .logo-icon {
+      width: 28px; height: 28px;
+      background: linear-gradient(135deg, #58a6ff, #3fb950);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+    }
+    nav .sep { color: var(--muted); font-size: 18px; }
+    nav .current { color: var(--muted); font-size: 14px; }
+    nav .badge {
+      margin-left: auto;
+      background: rgba(88,166,255,0.15);
+      color: var(--accent);
+      border: 1px solid rgba(88,166,255,0.3);
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      letter-spacing: 0.04em;
+    }
+
+    /* HERO */
+    .hero {
+      text-align: center;
+      padding: 64px 32px 40px;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    .hero .tag {
+      display: inline-block;
+      background: rgba(210,168,255,0.1);
+      color: var(--accent4);
+      border: 1px solid rgba(210,168,255,0.25);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 4px 14px;
+      margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-size: clamp(28px, 5vw, 44px);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 14px;
+      background: linear-gradient(135deg, #e6edf3 0%, #8b949e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p { color: var(--muted); font-size: 16px; line-height: 1.6; }
+
+    /* TAB NAV */
+    .tab-nav {
+      display: flex;
+      gap: 4px;
+      padding: 0 32px;
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      background: var(--surface);
+    }
+    .tab-btn {
+      padding: 12px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      border: none;
+      background: none;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* CONTENT */
+    .section { padding: 40px 32px 80px; max-width: 1100px; margin: 0 auto; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* SECTION LABEL */
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* INFO CARDS */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+      margin-bottom: 32px;
+    }
+    .info-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+    .info-card .label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .info-card .value {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* REGION FLOW CARDS */
+    .flow-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 36px;
+    }
+    .flow-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px;
+    }
+    .flow-card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .flow-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 999px;
+    }
+    .badge-explicit { background: rgba(247,129,102,0.15); color: var(--accent3); border: 1px solid rgba(247,129,102,0.3); }
+    .badge-implicit { background: rgba(88,166,255,0.12); color: var(--accent); border: 1px solid rgba(88,166,255,0.25); }
+    .badge-usa { background: rgba(63,185,80,0.12); color: var(--accent2); border: 1px solid rgba(63,185,80,0.25); }
+    .badge-default { background: rgba(139,148,158,0.12); color: var(--muted); border: 1px solid var(--border); }
+
+    .flow-regions {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .flow-card ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .flow-card li {
+      font-size: 13px;
+      color: var(--text);
+      padding-left: 16px;
+      position: relative;
+      line-height: 1.45;
+    }
+    .flow-card li::before {
+      content: '▸';
+      position: absolute;
+      left: 0;
+      color: var(--muted);
+      font-size: 11px;
+      top: 1px;
+    }
+    .flow-card .note {
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--muted);
+      background: rgba(139,148,158,0.07);
+      border-radius: 6px;
+      padding: 8px 10px;
+      border-left: 2px solid var(--border);
+    }
+
+    /* CATEGORY TABLE */
+    .cat-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-bottom: 32px;
+    }
+    .cat-table th {
+      text-align: left;
+      padding: 10px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .cat-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(48,54,61,0.5);
+      vertical-align: top;
+      line-height: 1.5;
+    }
+    .cat-table tr:last-child td { border-bottom: none; }
+    .cat-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .cat-id {
+      font-family: ui-monospace, "Cascadia Code", monospace;
+      font-size: 12px;
+      color: var(--accent4);
+      font-weight: 700;
+    }
+    .cat-always {
+      display: inline-block;
+      background: rgba(63,185,80,0.1);
+      color: var(--accent2);
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 7px;
+      border: 1px solid rgba(63,185,80,0.25);
+    }
+
+    /* GAME BLOCKS */
+    .game-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .game-block-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+    .game-icon {
+      width: 36px; height: 36px;
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .game-block-body { padding: 20px 22px; }
+    .game-block-body p { font-size: 13px; line-height: 1.6; color: var(--muted); margin-bottom: 14px; }
+    .game-block-body p:last-child { margin-bottom: 0; }
+
+    .prop-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .prop-row {
+      display: flex;
+      gap: 14px;
+      font-size: 13px;
+    }
+    .prop-key {
+      color: var(--muted);
+      font-weight: 600;
+      min-width: 200px;
+      flex-shrink: 0;
+      padding-top: 1px;
+    }
+    .prop-val { color: var(--text); line-height: 1.5; }
+    code {
+      font-family: ui-monospace, "Cascadia Code", monospace;
+      font-size: 11.5px;
+      background: rgba(139,148,158,0.1);
+      padding: 1px 5px;
+      border-radius: 4px;
+      color: var(--accent4);
+    }
+
+    /* PILL TAGS */
+    .pills { display: flex; flex-wrap: wrap; gap: 6px; }
+    .pill {
+      background: rgba(139,148,158,0.1);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 11px;
+      color: var(--muted);
+      padding: 2px 9px;
+    }
+    .pill.blue { background: rgba(88,166,255,0.1); color: var(--accent); border-color: rgba(88,166,255,0.25); }
+    .pill.green { background: rgba(63,185,80,0.1); color: var(--accent2); border-color: rgba(63,185,80,0.25); }
+    .pill.red { background: rgba(247,129,102,0.1); color: var(--accent3); border-color: rgba(247,129,102,0.25); }
+    .pill.purple { background: rgba(210,168,255,0.1); color: var(--accent4); border-color: rgba(210,168,255,0.25); }
+    .pill.orange { background: rgba(255,166,87,0.1); color: var(--accent5); border-color: rgba(255,166,87,0.25); }
+
+    /* CALLOUT */
+    .callout {
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-size: 13px;
+      line-height: 1.6;
+      margin-bottom: 24px;
+      display: flex;
+      gap: 12px;
+    }
+    .callout.blue { background: rgba(88,166,255,0.06); border: 1px solid rgba(88,166,255,0.2); }
+    .callout.yellow { background: rgba(255,166,87,0.06); border: 1px solid rgba(255,166,87,0.2); }
+    .callout.red { background: rgba(247,129,102,0.06); border: 1px solid rgba(247,129,102,0.2); }
+    .callout-icon { font-size: 16px; flex-shrink: 0; }
+    .callout-body { color: var(--muted); }
+    .callout-body strong { color: var(--text); }
+
+    /* COMPARISON TABLE */
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-bottom: 32px;
+    }
+    .compare-table th {
+      padding: 10px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .compare-table th:first-child { color: var(--text); }
+    .compare-table td {
+      padding: 11px 14px;
+      border-bottom: 1px solid rgba(48,54,61,0.5);
+      vertical-align: top;
+      line-height: 1.55;
+    }
+    .compare-table tr:last-child td { border-bottom: none; }
+    .compare-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .compare-table .row-label {
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .yes { color: var(--accent2); font-weight: 600; }
+    .no { color: var(--muted); }
+    .na { color: var(--muted); font-style: italic; }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      padding: 24px 32px;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../" class="logo">
+    <span class="logo-icon">🔬</span>
+    QA Visualizer
+  </a>
+  <span class="sep">/</span>
+  <span class="current">Consent &amp; Region Flows</span>
+  <span class="badge">Fortis Games Internal</span>
+</nav>
+
+<div class="hero">
+  <div class="tag">Compliance &amp; Privacy</div>
+  <h1>Consent &amp; Cookie Modal Reference</h1>
+  <p>Expected consent banner behavior per region across all Fortis games — OneTrust categories, IAB TCF, region flow classification, and per-SDK gating.</p>
+</div>
+
+<!-- TAB NAV -->
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="showTab('overview')">Overview</button>
+  <button class="tab-btn" onclick="showTab('regions')">Region Flows</button>
+  <button class="tab-btn" onclick="showTab('categories')">OneTrust Categories</button>
+  <button class="tab-btn" onclick="showTab('demeter')">Demeter</button>
+  <button class="tab-btn" onclick="showTab('spire')">Spire</button>
+  <button class="tab-btn" onclick="showTab('atlas')">Atlas</button>
+  <button class="tab-btn" onclick="showTab('mergemon')">Mergemon</button>
+  <button class="tab-btn" onclick="showTab('compare')">Side by Side</button>
+</div>
+
+<!-- ===== OVERVIEW TAB ===== -->
+<div class="section">
+<div id="tab-overview" class="tab-panel active">
+
+  <div class="callout blue">
+    <span class="callout-icon">ℹ️</span>
+    <div class="callout-body">
+      <strong>How region classification works:</strong> During bootflow, the Platform SDK queries the Terra API (<code>compliance/v1/bootflow?gameId=X&amp;countryCode=Y</code>).
+      The response determines whether the player's region requires <strong>Explicit</strong>, <strong>Implicit</strong>, or <strong>USA</strong> consent handling.
+      A fallback to the local <code>ComplianceSequenceDescriptorScriptableMap.asset</code> is used if the API call fails.
+    </div>
+  </div>
+
+  <div class="section-label">How the flow is selected</div>
+  <div class="flow-grid">
+    <div class="flow-card">
+      <h3><span class="flow-badge badge-explicit">Explicit</span> Express Consent</h3>
+      <div class="flow-regions">EU / UK / GDPR-covered regions</div>
+      <ul>
+        <li>OneTrust banner is shown (opt-in required)</li>
+        <li>Consent must be actively given before targeting SDKs activate</li>
+        <li>Full IAB TCF vendor list available in preferences</li>
+        <li>IABTCF TC String generated and stored</li>
+        <li>Accept All / Reject All / Manage Preferences buttons</li>
+        <li>Tailored offers default: <strong>opt-out</strong></li>
+      </ul>
+      <div class="note">Legal basis returned by Terra API: <code>expressConsent</code></div>
+    </div>
+
+    <div class="flow-card">
+      <h3><span class="flow-badge badge-implicit">Implicit</span> Implied Consent</h3>
+      <div class="flow-regions">Canada / Australia / New Zealand / others</div>
+      <ul>
+        <li>OneTrust banner is shown (to record consent)</li>
+        <li>Consent is recorded as given by default (opt-out model)</li>
+        <li>Targeting SDKs activate unless player opts out</li>
+        <li>Preference center accessible for changes</li>
+        <li>No full IAB TCF vendor list required</li>
+        <li>Tailored offers default: varies by region config</li>
+      </ul>
+      <div class="note">Legal basis returned by Terra API: <code>impliedConsent</code></div>
+    </div>
+
+    <div class="flow-card">
+      <h3><span class="flow-badge badge-usa">USA</span> US Consent</h3>
+      <div class="flow-regions">United States (all states)</div>
+      <ul>
+        <li>OneTrust banner may appear for CPRA/CCPA compliance</li>
+        <li>Do Not Sell / Share My Personal Info (DNSM) option</li>
+        <li>California (CPRA): full opt-out rights</li>
+        <li>Targeting SDKs active by default unless opted out</li>
+        <li>Atlas: No age gate slider (NoAgeGate rule)</li>
+        <li>Tailored offers default: <strong>opt-in</strong></li>
+      </ul>
+      <div class="note">Legal basis returned by Terra API: <code>impliedUs</code>. API fallback hardcodes USA flow for US.</div>
+    </div>
+
+    <div class="flow-card">
+      <h3><span class="flow-badge badge-default">Default</span> Rest of World</h3>
+      <div class="flow-regions">All other regions</div>
+      <ul>
+        <li>Banner typically not shown (<code>showBanner = false</code>)</li>
+        <li>ToS + Privacy accepted silently during Age Gate</li>
+        <li>Targeting SDKs treated as enabled (no consent barrier)</li>
+        <li>Consent state: Not Collected (SDKs enabled by default)</li>
+      </ul>
+      <div class="note">Determined by local <code>ComplianceSequenceDescriptorScriptableMap</code> when Terra API unavailable.</div>
+    </div>
+  </div>
+
+  <div class="section-label">Consent architecture</div>
+  <div class="callout yellow">
+    <span class="callout-icon">⚙️</span>
+    <div class="callout-body">
+      <strong>OneTrust → IComplianceManagedSdk:</strong> After the player interacts with the banner, <code>ControlComplianceManagedSdks()</code> is called.
+      It reads the consent status for each OneTrust category and SDK, then calls <code>Enable()</code> or <code>Disable()</code> on each registered <code>IComplianceManagedSdk</code>.
+      All current implementations gate on the <strong>TARGETING</strong> category (C0004) and also check the <code>trackers</code> age gate permission — if the player is flagged as underage, targeting SDKs stay disabled even if OneTrust consent is given.
+    </div>
+  </div>
+
+  <div class="section-label">What ShouldShowBanner means</div>
+  <div class="info-grid">
+    <div class="info-card">
+      <div class="label">ShouldShowBanner = true</div>
+      <div class="value">Banner is explicitly required for this player's region. OneTrust's server-side config determined the player needs to consent. The DataConsentStep shows the OneTrust UI.</div>
+    </div>
+    <div class="info-card">
+      <div class="label">ShouldShowBanner = false</div>
+      <div class="value">OneTrust has determined no banner is needed (Rest of World / player already consented). DataConsentStep is skipped. SDK consent state may still be read from cached data.</div>
+    </div>
+    <div class="info-card">
+      <div class="label">bannerReason / bannerReasonCode</div>
+      <div class="value">Diagnostic fields in the OneTrust response indicating WHY the banner is shown (e.g., GDPR, CCPA). Useful for QA to confirm the correct reason code per region.</div>
+    </div>
+    <div class="info-card">
+      <div class="label">IABTCF_TCString</div>
+      <div class="value">Present in EU/UK responses. The IAB TCF Transparency &amp; Consent Framework string. Stored in <code>OT_ConsentString</code> cache and passed on subsequent OneTrust API calls.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== REGIONS TAB ===== -->
+<div id="tab-regions" class="tab-panel">
+
+  <div class="callout blue">
+    <span class="callout-icon">🌍</span>
+    <div class="callout-body">
+      <strong>Region classification is server-driven.</strong> The Terra API response for each <code>countryCode + stateCode</code> combination returns the correct legal basis.
+      QA can override the detected region using Spire's <code>DebugGeoOverride</code> feature (Spire only) or a VPN.
+      The list below reflects the platform-level classification — individual games may override specific behaviors.
+    </div>
+  </div>
+
+  <div class="section-label">Explicit Consent regions (GDPR)</div>
+  <div class="info-card" style="margin-bottom:20px">
+    <div class="label">What happens</div>
+    <div class="value" style="margin-bottom:10px">
+      Age Gate → ToS/Privacy → <strong>OneTrust Banner (opt-in)</strong> → ATT (iOS, if trackers permitted) → Attribution init
+    </div>
+    <div class="pills">
+      <span class="pill red">EU member states</span>
+      <span class="pill red">United Kingdom</span>
+      <span class="pill red">Norway</span>
+      <span class="pill red">Iceland</span>
+      <span class="pill red">Liechtenstein</span>
+      <span class="pill red">Switzerland</span>
+    </div>
+    <div style="margin-top:12px;font-size:13px;color:var(--muted);">
+      OneTrust shows the full banner with <strong>Accept All / Reject All / Manage Preferences</strong>.
+      For UK and EU, the Preference Center includes the <strong>IAB TCF vendor list</strong> (ad network partners, analytics vendors).
+      An <code>IABTCF_TCString</code> is generated, cached, and passed to the OneTrust SDK on subsequent sessions.
+    </div>
+  </div>
+
+  <div class="section-label">Implicit Consent regions</div>
+  <div class="info-card" style="margin-bottom:20px">
+    <div class="label">What happens</div>
+    <div class="value" style="margin-bottom:10px">
+      Age Gate → ToS/Privacy → <strong>OneTrust Banner (shown for recording, consent assumed)</strong> → ATT (iOS) → Attribution
+    </div>
+    <div class="pills">
+      <span class="pill blue">Canada</span>
+      <span class="pill blue">Australia</span>
+      <span class="pill blue">New Zealand</span>
+      <span class="pill blue">Brazil</span>
+      <span class="pill blue">South Africa</span>
+      <span class="pill blue">+ other implied consent jurisdictions</span>
+    </div>
+    <div style="margin-top:12px;font-size:13px;color:var(--muted);">
+      Banner appears but consent is <em>recorded as given by default</em>. Player may open the Preference Center to change individual category settings.
+      No full IAB TCF vendor list. Direct marketing default varies: Brazil typically defaults to opt-out, Canada to opt-in (server-configured).
+    </div>
+  </div>
+
+  <div class="section-label">USA flow</div>
+  <div class="info-card" style="margin-bottom:20px">
+    <div class="label">What happens</div>
+    <div class="value" style="margin-bottom:10px">
+      Age Gate (Demeter/Spire) or <strong>No Age Gate</strong> (Atlas) → ToS/Privacy → <strong>OneTrust Banner (CCPA/CPRA)</strong> → ATT (iOS)
+    </div>
+    <div class="pills">
+      <span class="pill green">United States (all states)</span>
+    </div>
+    <div style="margin-top:12px;font-size:13px;color:var(--muted);">
+      California (CPRA) players see a <strong>"Do Not Sell or Share My Personal Information"</strong> link.
+      Other US states may see a simplified banner or no banner based on OneTrust's server config.
+      Targeting SDKs are active by default; player must opt out. Tailored offers preference defaults to <strong>opt-in</strong>.
+      Atlas skips the age gate entirely for all US players (<code>AgeGateRule = NoAgeGate</code>).
+    </div>
+  </div>
+
+  <div class="section-label">Default (Rest of World)</div>
+  <div class="info-card" style="margin-bottom:20px">
+    <div class="label">What happens</div>
+    <div class="value" style="margin-bottom:10px">
+      Age Gate → ToS/Privacy → <strong>No consent banner</strong> → Attribution (SDKs enabled by default)
+    </div>
+    <div class="pills">
+      <span class="pill">Philippines</span>
+      <span class="pill">South Korea</span>
+      <span class="pill">Japan</span>
+      <span class="pill">Most of Asia-Pacific</span>
+      <span class="pill">Most of Latin America</span>
+      <span class="pill">+ all other regions</span>
+    </div>
+    <div style="margin-top:12px;font-size:13px;color:var(--muted);">
+      <code>ShouldShowBanner = false</code>. No OneTrust consent interaction. All targeting SDKs enabled immediately after Age Gate / ToS,
+      subject to age gate <code>trackers</code> permission.
+    </div>
+  </div>
+
+  <div class="section-label">Direct Marketing &amp; Tailored Offers defaults per region</div>
+  <div class="info-card" style="margin-bottom:20px">
+    <div class="value" style="font-size:13px;line-height:1.7;color:var(--muted)">
+      The Terra API response includes <code>directMarketing</code> and <code>tailoredOffers</code> actions in addition to the tracking flow.
+      These set the <em>initial default</em> state for marketing preferences — <code>IComplianceInitialConsentProvider</code> stores these values and
+      <code>TailoredOffersConsentResolver</code> (Spire) applies them on first login if the player hasn't explicitly set a preference yet.
+      <br><br>
+      <strong style="color:var(--text)">EU/UK:</strong> tailoredOffers defaults to <strong>opt-out</strong> (legalBasis = <code>expressConsent</code> is absent → opt-out)<br>
+      <strong style="color:var(--text)">US:</strong> tailoredOffers defaults to <strong>opt-in</strong> (set explicitly in USA fallback)<br>
+      <strong style="color:var(--text)">Other:</strong> determined by Terra API per-region configuration
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== CATEGORIES TAB ===== -->
+<div id="tab-categories" class="tab-panel">
+
+  <div class="callout blue">
+    <span class="callout-icon">📋</span>
+    <div class="callout-body">
+      <strong>OneTrust category IDs</strong> are configured in the OneTrust dashboard per game (domain ID). The C-codes below are standard OneTrust defaults.
+      Category consent status is stored in <code>OT_GroupConsents</code> with values: <code>0</code> = Not Given, <code>1</code> = Given, <code>2</code> = Always Active.
+      The <code>ControlComplianceManagedSdks()</code> method reads these values after each consent interaction to enable or disable registered SDKs.
+    </div>
+  </div>
+
+  <div class="section-label">Standard OneTrust categories</div>
+  <table class="cat-table">
+    <thead>
+      <tr>
+        <th>Category ID</th>
+        <th>Name</th>
+        <th>Default State</th>
+        <th>What it gates in Fortis games</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="cat-id">C0001</span></td>
+        <td>Strictly Necessary</td>
+        <td><span class="cat-always">Always Active</span></td>
+        <td>Core SDK functions, authentication, save/load, economy. Cannot be disabled. No registered <code>IComplianceManagedSdk</code> uses this category.</td>
+      </tr>
+      <tr>
+        <td><span class="cat-id">C0002</span></td>
+        <td>Performance / Analytics</td>
+        <td>Given by default (Implicit/USA) or Opt-in (Explicit)</td>
+        <td>Game performance analytics. Not currently used as a gate by any registered compliance manager — analytics SDKs instead use the TARGETING category for tracking consent.</td>
+      </tr>
+      <tr>
+        <td><span class="cat-id">C0003</span></td>
+        <td>Functional</td>
+        <td>Given by default (Implicit/USA) or Opt-in (Explicit)</td>
+        <td>Functional features (e.g. social login, cross-device sync). Not currently used as a primary gate in identified compliance managers.</td>
+      </tr>
+      <tr>
+        <td><span class="cat-id">C0004</span></td>
+        <td>Targeting / Advertising</td>
+        <td>Opt-in (Explicit) / Given by default (Implicit/USA)</td>
+        <td>
+          <strong>All tracking SDKs are gated here.</strong><br>
+          • Firebase Analytics (Spire: <code>FIREBASE_ANALYTICS</code> + <code>FIREBASE_ANALYTICS_IMPLEMENTATION</code>)<br>
+          • Singular attribution (<code>ANALYTICSFG</code>)<br>
+          • CleverTap engagement (<code>CLEVERTAP</code>)<br>
+          If C0004 = Not Given → all these SDKs call <code>Disable()</code>. A secondary check on the age gate <code>trackers</code> permission also applies.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="section-label">IAB TCF integration</div>
+  <div class="callout blue">
+    <span class="callout-icon">🔐</span>
+    <div class="callout-body">
+      <strong>IAB TCF is active for EU/UK (Explicit Consent) regions.</strong>
+      The OneTrust API response includes an <code>IABTCF_TCString</code> stored in <code>StorageKeys</code>.
+      The Preference Center exposes the full IAB TCF vendor list (<code>iab2V2Vendors</code>) including ad network partners, analytics vendors, and their declared purposes.
+      The TC String is passed back to the OneTrust API on subsequent banner requests via <code>OneTrustConfig.iabTcfTcString</code>.
+      <br><br>
+      <strong>Spire</strong> uses the native OneTrust mobile SDK (<code>UseNativeOneTrustBanner: 1</code>), which renders the IAB TCF vendor list natively rather than via a custom Unity WebView.
+    </div>
+  </div>
+
+  <div class="section-label">Consent status values</div>
+  <table class="cat-table">
+    <thead>
+      <tr>
+        <th>OTConsentStatus</th>
+        <th>Integer value</th>
+        <th>Meaning</th>
+        <th>SDK behavior</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>AlwaysActive</code></td>
+        <td>2</td>
+        <td>Strictly necessary — always on, user cannot disable</td>
+        <td>SDK <code>Enable()</code> called</td>
+      </tr>
+      <tr>
+        <td><code>Given</code></td>
+        <td>1</td>
+        <td>Player explicitly or implicitly gave consent</td>
+        <td>SDK <code>Enable()</code> called</td>
+      </tr>
+      <tr>
+        <td><code>NotGiven</code></td>
+        <td>0</td>
+        <td>Player explicitly rejected this category</td>
+        <td>SDK <code>Disable()</code> called</td>
+      </tr>
+      <tr>
+        <td><code>NotCollected</code></td>
+        <td>—</td>
+        <td>No consent interaction yet (e.g., Rest of World / banner not shown)</td>
+        <td>SDK state unchanged — not called by <code>ControlComplianceManagedSdks</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+</div>
+
+<!-- ===== DEMETER TAB ===== -->
+<div id="tab-demeter" class="tab-panel">
+
+  <div class="game-block">
+    <div class="game-block-header">
+      <div class="game-icon" style="background:rgba(88,166,255,0.12)">🌾</div>
+      <div>
+        <div style="font-weight:700;font-size:15px">Demeter</div>
+        <div style="font-size:12px;color:var(--muted)">proj-demeter-client · Valid Games</div>
+      </div>
+    </div>
+    <div class="game-block-body">
+      <div class="prop-list">
+        <div class="prop-row">
+          <div class="prop-key">OneTrust banner type</div>
+          <div class="prop-val">Custom Unity WebView (<code>UnityComplianceApi</code> via <code>DemeterComplianceApiDecorator</code>)</div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">Privacy policy URL override</div>
+          <div class="prop-val"><code>validgames.com/policy.html</code> — replaces the default <code>fortisgames.com</code> URL in the banner UI at runtime</div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">Combined Age Gate</div>
+          <div class="prop-val">Optional (<code>UseCombinedAgeGate</code> configurable). Age slider + ToS/Privacy on one screen when enabled.</div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">OneTrust Domain IDs</div>
+          <div class="prop-val">Configured in <code>PlatformBootflowConfiguration.asset</code> — separate iOS and Android domain IDs registered in the OneTrust dashboard</div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">Compliance API</div>
+          <div class="prop-val"><code>DemeterComplianceApiDecorator</code> wraps <code>UnityComplianceApi</code>. Overrides only the policy link URL in <code>FetchBannerData()</code>; all other consent logic is identical to the Platform SDK standard.</div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">Registered IComplianceManagedSdks</div>
+          <div class="prop-val"><span class="pill blue">Singular (Attribution)</span> <span class="pill blue">CleverTap</span> — both gated by TARGETING (C0004) + <code>trackers</code> age gate permission</div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">IAB TCF</div>
+          <div class="prop-val">Supported via OneTrust API for EU/UK players. TC String stored and passed on subsequent sessions.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Region flow sequence — Demeter</div>
+  <div class="flow-grid">
+    <div class="flow-card">
+      <h3><span class="flow-badge badge-explicit">EU / UK</span></h3>
+      <ul>
+        <li>Age Gate slider (0–65+)</li>
+        <li>ToS + Privacy acceptance</li>
+        <li>OneTrust banner: Accept All / Reject All / Manage Preferences</li>
+        <li>IAB TCF vendor list in Preference Center</li>
+        <li>ATT prompt (iOS)</li>
+        <li>Singular + CleverTap: enabled only if C0004 Given</li>
+      </ul>
+    </div>
+    <div class="flow-card">
+      <h3><span class="flow-badge badge-implicit">CA / AU</span></h3>
+      <ul>
+        <li>Age Gate slider</li>
+        <li>ToS + Privacy acceptance</li>
+        <li>OneTrust banner shown (consent recorded as given)</li>
+        <li>Preference center available for opt-out</li>
+        <li>ATT prompt (iOS)</li>
+        <li>Singular + CleverTap: active by default</li>
+      </ul>
+    </div>
+    <div class="flow-card">
+      <h3><span class="flow-badge badge-usa">USA</span></h3>
+      <ul>
+        <li>Age Gate slider (age gate required)</li>
+        <li>ToS + Privacy acceptance</li>
+        <li>OneTrust CCPA banner</li>
+        <li>DNSM link for California</li>
+        <li>ATT prompt (iOS)</li>
+        <li>Singular + CleverTap: active by default, opt-out</li>
+      </ul>
+    </div>
+    <div class="flow-card">
+      <h3><span class="flow-badge badge-default">Rest of World</span></h3>
+      <ul>
+        <li>Age Gate slider</li>
+        <li>ToS + Privacy acceptance</li>
+        <li>No OneTrust banner</li>
+        <li>Singular + CleverTap: enabled (no consent barrier)</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== SPIRE TAB ===== -->
+<div id="tab-spire" class="tab-panel">
+
+  <div class="game-block">
+    <div class="game-block-header">
+      <div class="game-icon" style="background:rgba(247,129,102,0.12)">🗼</div>
+      <div>
+        <div style="font-weight:700;font-size:15px">Spire — Twilight Towers</div>
+        <div style="font-size:12px;color:var(--muted)">proj-spire · PerBlue</div>
+      </div>
+    </div>
+    <div class="game-block-body">
+      <div class="prop-list">
+        <div class="prop-row">
+          <div class="prop-key">OneTrust banner type</div>
+          <div class="prop-val"><strong>Native OneTrust SDK</strong> (<code>UseNativeOneTrustBanner: 1</code>) — renders natively, not via Unity WebView. The native SDK handles IAB TCF UI including vendor list.</div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">OneTrust Domain IDs</div>
+          <div class="prop-val">iOS: <code>019831da-6374-7fcf-884f-c2f9a4d2cbca</code><br>Android: <code>019831d9-e624-757a-9c0b-03639cce53ac</code></div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">Combined Age Gate</div>
+          <div class="prop-val">Always enabled (<code>UseCombinedAgeGate: 1</code>). Age slider combined with ToS/Privacy on one screen.</div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">Registered IComplianceManagedSdks</div>
+          <div class="prop-val">
+            <span class="pill blue">FirebaseAnalyticsComplianceManager</span>
+            <span class="pill blue">FirebaseAnalyticsImpComplianceManager</span>
+            — both gated by TARGETING (C0004) + <code>trackers</code> age gate permission. Calls <code>FirebaseAnalytics.SetAnalyticsCollectionEnabled()</code>.
+            A separate <code>Update()</code> method re-applies consent after Firebase initializes (prevents race condition).
+          </div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">IAB TCF / AdMon banner</div>
+          <div class="prop-val">
+            For UK and EU players, the native OneTrust SDK shows the full <strong>IAB TCF banner</strong> including the vendor consent list (Google, AppLovin, analytics partners).
+            The TC String (<code>IABTCF_TCString</code>) is stored and passed back on subsequent OneTrust API calls.
+            This is what the QA team refers to as the "IAB AdMon banner" — it includes ad network vendors (AppLovin MAX) in the vendor list.
+          </div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">AdMon (Rewarded Video)</div>
+          <div class="prop-val">
+            AppLovin MAX (<code>SpireAdMonFeature</code>) is controlled by a GrowthBook <strong>kill switch</strong> (<code>IKillSwitch.Feature.adMon</code>), not directly by OneTrust consent category.
+            S2S callbacks go to <code>ExternalPostbacks/api/v1/admon/rewards</code>. Ads are rewarded video only; not shown to opted-out users due to the platform-level kill switch.
+          </div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">Tailored Offers</div>
+          <div class="prop-val"><code>TailoredOffersConsentResolver</code> sets the initial preference on first login based on Terra API regional config (<code>IComplianceInitialConsentProvider.ShouldEnableTailoredOffers()</code>). EU = opt-out default. US = opt-in default.</div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">QA geo override</div>
+          <div class="prop-val"><code>DebugGeoOverride</code> in Spire config — allows overriding the detected region in debug/dev builds without a VPN. Set to the desired country code to test region-specific flows.</div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">OneTrust SDK version</div>
+          <div class="prop-val"><code>202506.1.0</code></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Region flow sequence — Spire</div>
+  <div class="flow-grid">
+    <div class="flow-card">
+      <h3><span class="flow-badge badge-explicit">EU / UK</span></h3>
+      <ul>
+        <li>Combined Age Gate + ToS/Privacy (single screen)</li>
+        <li><strong>Native OneTrust IAB TCF banner</strong></li>
+        <li>Full vendor list (AppLovin, Google, analytics partners)</li>
+        <li>IABTCF_TCString generated and stored</li>
+        <li>ATT prompt (iOS)</li>
+        <li>Firebase Analytics: enabled only if C0004 Given AND trackers permission granted</li>
+        <li>Tailored offers: opt-out default</li>
+      </ul>
+      <div class="note">This is the "IAB AdMon banner" referenced in QA docs — the native OneTrust IAB TCF modal that lists ad/analytics vendors.</div>
+    </div>
+    <div class="flow-card">
+      <h3><span class="flow-badge badge-implicit">CA / AU / BR</span></h3>
+      <ul>
+        <li>Combined Age Gate + ToS/Privacy</li>
+        <li>Native OneTrust banner (implicit, consent recorded)</li>
+        <li>Firebase: active by default, opt-out available</li>
+        <li>ATT prompt (iOS)</li>
+      </ul>
+    </div>
+    <div class="flow-card">
+      <h3><span class="flow-badge badge-usa">USA</span></h3>
+      <ul>
+        <li>Combined Age Gate + ToS/Privacy</li>
+        <li>OneTrust CCPA banner</li>
+        <li>DNSM link (California)</li>
+        <li>Firebase: active by default, opt-out</li>
+        <li>Tailored offers: opt-in default</li>
+        <li>ATT prompt (iOS)</li>
+      </ul>
+    </div>
+    <div class="flow-card">
+      <h3><span class="flow-badge badge-default">Rest of World</span></h3>
+      <ul>
+        <li>Combined Age Gate + ToS/Privacy</li>
+        <li>No OneTrust banner</li>
+        <li>Firebase: enabled (no consent barrier)</li>
+        <li>ATT prompt (iOS)</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== ATLAS TAB ===== -->
+<div id="tab-atlas" class="tab-panel">
+
+  <div class="game-block">
+    <div class="game-block-header">
+      <div class="game-icon" style="background:rgba(63,185,80,0.12)">⚡</div>
+      <div>
+        <div style="font-weight:700;font-size:15px">Atlas — Krang</div>
+        <div style="font-size:12px;color:var(--muted)">proj-atlas-monorepo/krang · Fortis</div>
+      </div>
+    </div>
+    <div class="game-block-body">
+      <div class="prop-list">
+        <div class="prop-row">
+          <div class="prop-key">OneTrust banner type</div>
+          <div class="prop-val">Custom Unity WebView (standard Platform SDK banner — no <code>UseNativeOneTrustBanner</code> flag)</div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">Combined Age Gate</div>
+          <div class="prop-val">Always enabled (<code>UseCombinedAgeGate: 1</code>). Age slider combined with ToS/Privacy.</div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">US Age Gate rule</div>
+          <div class="prop-val"><strong>NoAgeGate</strong> — US players skip the age gate slider entirely. Only ToS/Privacy is shown, then the CCPA consent banner. No age entry required.</div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">Photosensitivity Warning</div>
+          <div class="prop-val"><code>ShowPhotosensitivityWarning: 1</code> — Atlas shows a photosensitivity/epilepsy warning modal unique to this game, shown before or during the bootflow.</div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">OneTrust SDK version</div>
+          <div class="prop-val"><code>202601.2.5</code></div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">DI framework</div>
+          <div class="prop-val">Microsoft.Extensions.DependencyInjection (not VContainer). Bootflow resolved from <code>DIContainer.ServiceProvider</code> in <code>LoginState.cs</code>. Up to 3 retries.</div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">IAB TCF</div>
+          <div class="prop-val">Supported via Platform SDK OneTrust API for EU/UK. TC String generated and stored as in other games.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Region flow sequence — Atlas</div>
+  <div class="flow-grid">
+    <div class="flow-card">
+      <h3><span class="flow-badge badge-explicit">EU / UK</span></h3>
+      <ul>
+        <li>Photosensitivity warning</li>
+        <li>Combined Age Gate + ToS/Privacy</li>
+        <li>OneTrust banner (opt-in): Accept All / Reject All / Manage Preferences</li>
+        <li>IAB TCF vendor list in Preference Center</li>
+        <li>ATT prompt (iOS)</li>
+      </ul>
+    </div>
+    <div class="flow-card">
+      <h3><span class="flow-badge badge-implicit">CA / AU</span></h3>
+      <ul>
+        <li>Photosensitivity warning</li>
+        <li>Combined Age Gate + ToS/Privacy</li>
+        <li>OneTrust banner (consent recorded, opt-out)</li>
+        <li>ATT prompt (iOS)</li>
+      </ul>
+    </div>
+    <div class="flow-card">
+      <h3><span class="flow-badge badge-usa">USA</span></h3>
+      <ul>
+        <li>Photosensitivity warning</li>
+        <li><strong>ToS/Privacy only — no age gate slider</strong> (<code>NoAgeGate</code>)</li>
+        <li>OneTrust CCPA banner</li>
+        <li>DNSM link (California)</li>
+        <li>ATT prompt (iOS)</li>
+      </ul>
+      <div class="note">US players bypass the age slider entirely — unique to Atlas among Fortis games.</div>
+    </div>
+    <div class="flow-card">
+      <h3><span class="flow-badge badge-default">Rest of World</span></h3>
+      <ul>
+        <li>Photosensitivity warning</li>
+        <li>Combined Age Gate + ToS/Privacy</li>
+        <li>No OneTrust banner</li>
+        <li>ATT prompt (iOS)</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== MERGEMON TAB ===== -->
+<div id="tab-mergemon" class="tab-panel">
+
+  <div class="game-block">
+    <div class="game-block-header">
+      <div class="game-icon" style="background:rgba(210,168,255,0.12)">🌿</div>
+      <div>
+        <div style="font-weight:700;font-size:15px">Mergemon</div>
+        <div style="font-size:12px;color:var(--muted)">mergemon · TypeScript / Web SDK</div>
+      </div>
+    </div>
+    <div class="game-block-body">
+      <div class="prop-list">
+        <div class="prop-row">
+          <div class="prop-key">Platform</div>
+          <div class="prop-val">Web game using <code>@fortis/sdk</code> (TypeScript). Mirrors the Unity Platform SDK bootflow in web form.</div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">Current release regions</div>
+          <div class="prop-val">
+            <span class="pill green">US</span>
+            <span class="pill green">PH (Philippines)</span>
+            <span class="pill red">EU — not released</span>
+            <span class="pill red">UK — not released</span>
+            <br>
+            <span style="font-size:12px;color:var(--muted);margin-top:6px;display:block">Controlled by <code>complianceRules.json</code>: <code>defaultRule.released = false</code>. Only US and PH have <code>released: true</code>. All other regions blocked at game level.</span>
+          </div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">Consent flow (active regions)</div>
+          <div class="prop-val">USA flow + Philippines (Default flow). GDPR/Explicit Consent flow not exercised in production — no EU/UK players reach the game.</div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">Age gate</div>
+          <div class="prop-val">
+            Web DOM overlay slider (0–65+) via <code>fortisAgeGateDialog</code> in <code>complianceDialogs.ts</code>.
+            Underage result cached in <code>localStorage</code> with a <strong>2-hour TTL</strong> — underage players are blocked for 2 hours on return.
+          </div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">DNSM toggle</div>
+          <div class="prop-val">
+            Pre-OneTrust CCPA stopgap: <code>setNonEssentialTrackingDisabled()</code> stored at <code>localStorage['mergemon_tracking_preference_v1']</code>.
+            "Do Not Sell or Share My Personal Information" toggle in the Settings menu.
+          </div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">Consent preferences</div>
+          <div class="prop-val"><code>setFortisConsentPreferences()</code> sets <code>dataCollectionAllowed</code> and <code>adsAllowed</code> in the SDK context based on player's consent choices.</div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">IAB TCF</div>
+          <div class="prop-val">Not active — no EU/UK players reach the game in the current release state. The web SDK supports IAB TCF regions in principle (gdpr/nonGdpr/usa flows defined in SDK), but the <code>complianceRules.json</code> gates them out.</div>
+        </div>
+        <div class="prop-row">
+          <div class="prop-key">Theme</div>
+          <div class="prop-val">Custom campfire theme with <code>TosPopupBG.webp</code> background — visually different from Unity game consent UIs.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout yellow">
+    <span class="callout-icon">⚠️</span>
+    <div class="callout-body">
+      <strong>EU/UK QA note:</strong> Testing the GDPR/Explicit Consent or IAB TCF flow for Mergemon requires either a release region expansion or a test environment override.
+      The current <code>complianceRules.json</code> blocks all non-US, non-PH players at the release gating level before the SDK consent flow is reached.
+    </div>
+  </div>
+
+  <div class="section-label">Region flow sequence — Mergemon</div>
+  <div class="flow-grid">
+    <div class="flow-card">
+      <h3><span class="flow-badge badge-usa">USA</span></h3>
+      <ul>
+        <li>Web age gate dialog (DOM overlay, campfire theme)</li>
+        <li>ToS + Privacy acceptance</li>
+        <li>OneTrust consent (CCPA)</li>
+        <li>DNSM toggle available in Settings</li>
+        <li>Underage cache: 2-hour TTL in localStorage</li>
+      </ul>
+    </div>
+    <div class="flow-card">
+      <h3><span class="flow-badge badge-default">Philippines (Default)</span></h3>
+      <ul>
+        <li>Web age gate dialog</li>
+        <li>ToS + Privacy acceptance</li>
+        <li>No consent banner</li>
+        <li>SDKs: enabled by default</li>
+      </ul>
+    </div>
+    <div class="flow-card" style="opacity:0.5">
+      <h3><span class="flow-badge badge-explicit">EU / UK</span> <span style="font-size:11px;color:var(--muted)">(not released)</span></h3>
+      <ul>
+        <li>Would show GDPR consent flow</li>
+        <li>IAB TCF vendor list</li>
+        <li>Full opt-in required</li>
+        <li>Currently blocked by complianceRules.json</li>
+      </ul>
+      <div class="note">Not testable in production. Requires release gate expansion.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== SIDE-BY-SIDE TAB ===== -->
+<div id="tab-compare" class="tab-panel">
+
+  <div class="section-label">Consent implementation comparison</div>
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>Feature</th>
+        <th>Demeter</th>
+        <th>Spire</th>
+        <th>Atlas</th>
+        <th>Mergemon</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="row-label">OneTrust banner implementation</td>
+        <td>Custom Unity WebView<br><code>UnityComplianceApi</code></td>
+        <td><strong>Native OneTrust SDK</strong><br><code>UseNativeOneTrustBanner: 1</code></td>
+        <td>Custom Unity WebView<br><code>UnityComplianceApi</code></td>
+        <td>Web SDK (<code>@fortis/sdk</code>)<br>DOM overlay</td>
+      </tr>
+      <tr>
+        <td class="row-label">Combined Age Gate</td>
+        <td><span class="no">Optional</span></td>
+        <td><span class="yes">Always on</span></td>
+        <td><span class="yes">Always on</span></td>
+        <td><span class="yes">Always on</span></td>
+      </tr>
+      <tr>
+        <td class="row-label">US age gate rule</td>
+        <td>Required (slider shown)</td>
+        <td>Required (slider shown)</td>
+        <td><strong>NoAgeGate</strong> (skipped)</td>
+        <td>Required (slider shown)</td>
+      </tr>
+      <tr>
+        <td class="row-label">IAB TCF vendor list (EU/UK)</td>
+        <td><span class="yes">Yes</span> (via OneTrust Preference Center)</td>
+        <td><span class="yes">Yes</span> (native SDK renders natively)</td>
+        <td><span class="yes">Yes</span> (via OneTrust Preference Center)</td>
+        <td><span class="na">N/A</span> (EU not released)</td>
+      </tr>
+      <tr>
+        <td class="row-label">IABTCF_TCString stored</td>
+        <td><span class="yes">Yes</span></td>
+        <td><span class="yes">Yes</span></td>
+        <td><span class="yes">Yes</span></td>
+        <td><span class="no">No (EU not released)</span></td>
+      </tr>
+      <tr>
+        <td class="row-label">Firebase Analytics gated</td>
+        <td><span class="no">No Firebase</span></td>
+        <td><span class="yes">Yes</span> — C0004 + trackers perm</td>
+        <td>Unknown</td>
+        <td><span class="na">N/A</span></td>
+      </tr>
+      <tr>
+        <td class="row-label">Singular (attribution) gated</td>
+        <td><span class="yes">Yes</span> — C0004 + trackers perm</td>
+        <td><span class="yes">Yes</span> (Platform SDK default)</td>
+        <td><span class="yes">Yes</span> (Platform SDK default)</td>
+        <td><code>adsAllowed</code> flag</td>
+      </tr>
+      <tr>
+        <td class="row-label">CleverTap gated</td>
+        <td><span class="yes">Yes</span> — C0004 + trackers perm</td>
+        <td><span class="yes">Yes</span> (Platform SDK default)</td>
+        <td><span class="yes">Yes</span> (Platform SDK default)</td>
+        <td><span class="na">N/A</span></td>
+      </tr>
+      <tr>
+        <td class="row-label">Rewarded video ads (AdMon)</td>
+        <td><span class="no">No</span></td>
+        <td>AppLovin MAX — kill switch gated, not OneTrust</td>
+        <td><span class="no">No</span></td>
+        <td><span class="no">No</span></td>
+      </tr>
+      <tr>
+        <td class="row-label">Tailored offers consent</td>
+        <td><span class="no">Not implemented</span></td>
+        <td><span class="yes">Yes</span> — <code>TailoredOffersConsentResolver</code></td>
+        <td><span class="no">Not identified</span></td>
+        <td><span class="no">Not implemented</span></td>
+      </tr>
+      <tr>
+        <td class="row-label">Privacy URL</td>
+        <td><code>validgames.com/policy.html</code><br>(overridden at runtime)</td>
+        <td><code>fortisgames.com</code></td>
+        <td><code>fortisgames.com</code></td>
+        <td><code>fortisgames.com</code></td>
+      </tr>
+      <tr>
+        <td class="row-label">CCPA/DNSM</td>
+        <td>Via OneTrust banner</td>
+        <td>Via native OneTrust SDK</td>
+        <td>Via OneTrust banner</td>
+        <td>Settings toggle + OneTrust</td>
+      </tr>
+      <tr>
+        <td class="row-label">Photosensitivity warning</td>
+        <td><span class="no">No</span></td>
+        <td><span class="no">No</span></td>
+        <td><span class="yes">Yes</span></td>
+        <td><span class="no">No</span></td>
+      </tr>
+      <tr>
+        <td class="row-label">QA geo override</td>
+        <td><span class="no">No (VPN required)</span></td>
+        <td><span class="yes">Yes</span> — <code>DebugGeoOverride</code></td>
+        <td><span class="no">No (VPN required)</span></td>
+        <td><span class="no">No (VPN required)</span></td>
+      </tr>
+      <tr>
+        <td class="row-label">OneTrust SDK version</td>
+        <td>Platform SDK default</td>
+        <td><code>202506.1.0</code></td>
+        <td><code>202601.2.5</code></td>
+        <td>Web SDK (<code>@fortis/sdk</code>)</td>
+      </tr>
+      <tr>
+        <td class="row-label">Released in EU/UK</td>
+        <td><span class="yes">Yes</span></td>
+        <td><span class="yes">Yes</span></td>
+        <td><span class="yes">Yes</span></td>
+        <td><span class="no">No</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+</div>
+</div><!-- /section -->
+
+<footer>
+  Built by QA · <a href="../">QA Visualizer Home</a> · <a href="https://github.com/SergioS-fortis/qa-visualizer" target="_blank">View on GitHub</a>
+</footer>
+
+<script>
+  function showTab(id) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    event.target.classList.add('active');
+  }
+</script>
+</body>
+</html>
